@@ -1,62 +1,68 @@
-import React, { Component } from "react";
-import PropTypes from "prop-types";
-import {Link} from 'react-router-dom'
-import { connect } from "react-redux";
-import { logoutUser } from "../../actions/authActions";
-import { getcurrentprofile } from "../../actions/profileaction";
+import React, { Fragment, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import PropTypes from 'prop-types';
+import { connect } from 'react-redux';
+import Spinner from '../layout/Spinner';
+import DashboardActions from './DashboardActions';
+import Experience from './Experience';
+import Education from './Education';
+import { getCurrentProfile, deleteAccount } from '../../actions/profile';
 
-class Dashboard extends Component {
-  componentDidMount(){
-    this.props.getcurrentprofile();
-  }
-  onLogoutClick = e => {
-    e.preventDefault();
-    this.props.logoutUser();
-  };
-render() {
-    const { user } = this.props.auth;
-    const { profile,loading,} = this.props.profile;
-    const loadingerror = this.props.errors.loading;
-    let dashboardcontent;
-    if(loading){
-      dashboardcontent = <h4>loading...</h4>
-    }else{
-      if(Object.keys(profile).length>0){
-dashboardcontent = <h4>todo display profile</h4>
-      }else{
-dashboardcontent = (
- <div> <h4>welcome {user.name} </h4>
- <p>no profile setup</p>
- <Link to="/create-profile" className="btn btn-large waves-effect waves-light hoverable blue accent-3">create profile</Link> 
-</div>
-)}
-    }
-return (
-      <div style={{ height: "75vh" }} className="container valign-wrapper">
-        <div className="row">
-          <div className="col s12 center-align">
-            <h4>
-                <span style={{ fontFamily: "monospace" }}>{dashboardcontent}</span> 
-            </h4>
+const Dashboard = ({
+  getCurrentProfile,
+  deleteAccount,
+  auth: { user },
+  profile: { profile, loading }
+}) => {
+  useEffect(() => {
+    getCurrentProfile();
+  }, [getCurrentProfile]);
+
+  return loading && profile === null ? (
+    <Spinner />
+  ) : (
+    <Fragment>
+      <h1 className='large text-primary'>Dashboard</h1>
+      <p className='lead'>
+        <i className='fas fa-user' /> Welcome {user && user.name}
+      </p>
+      {profile !== null ? (
+        <Fragment>
+          <DashboardActions />
+          <Experience experience={profile.experience} />
+          <Education education={profile.education} />
+
+          <div className='my-2'>
+            <button className='btn btn-danger' onClick={() => deleteAccount()}>
+              <i className='fas fa-user-minus' /> Delete My Account
+            </button>
           </div>
-        </div>
-      </div>
-    );
-  }
-}
-Dashboard.propTypes = {
-  getcurrentprofile:PropTypes.func.isRequired,
-  logoutUser: PropTypes.func.isRequired,
-  auth: PropTypes.object.isRequired,
-  profile: PropTypes.object.isRequired,
-  errors: PropTypes.object.isRequired,
+        </Fragment>
+      ) : (
+        <Fragment>
+          <p>You have not yet setup a profile, please add some info</p>
+          <Link to='/create-profile' className='btn btn-primary my-1'>
+            Create Profile
+          </Link>
+        </Fragment>
+      )}
+    </Fragment>
+  );
 };
+
+Dashboard.propTypes = {
+  getCurrentProfile: PropTypes.func.isRequired,
+  deleteAccount: PropTypes.func.isRequired,
+  auth: PropTypes.object.isRequired,
+  profile: PropTypes.object.isRequired
+};
+
 const mapStateToProps = state => ({
-  profile:state.profile,
   auth: state.auth,
-  errors:state.errors
+  profile: state.profile
 });
+
 export default connect(
   mapStateToProps,
-  { logoutUser , getcurrentprofile},
+  { getCurrentProfile, deleteAccount }
 )(Dashboard);
